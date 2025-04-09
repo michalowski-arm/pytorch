@@ -139,7 +139,7 @@ std::shared_ptr<MKLGeneratorImpl> MKLGeneratorImpl::clone() const {
  * See Note [Acquire lock when using random generators]
  */
 void MKLGeneratorImpl::set_offset(uint64_t offset) {
-  TORCH_CHECK(false, "MKL Generator does not support directly setting offset");
+  TORCH_CHECK(false, "MKL Generator does not allow to set offset");
 }
 
 /**
@@ -163,22 +163,7 @@ void MKLGeneratorImpl::advance_offset(uint64_t n) {
  * state is returned as a CPU byte tensor.
  */
 c10::intrusive_ptr<c10::TensorImpl> MKLGeneratorImpl::get_state() const {
-  static const size_t seed_size = sizeof(uint64_t);
-  static const size_t offset_size = sizeof(uint64_t);
-  static const size_t lock_seed_size = sizeof(bool);
-  static const size_t total_size = seed_size + offset_size + lock_seed_size;
-
-  auto state_tensor = at::detail::empty_cpu({(int64_t)total_size}, ScalarType::Byte, std::nullopt, std::nullopt, std::nullopt, std::nullopt);
-  auto rng_state = state_tensor.data_ptr<uint8_t>();
-  auto current_seed = this->current_seed();
-  auto current_offset = this->get_offset();
-  auto current_lock_seed = this->get_lock_seed();
-
-  memcpy(rng_state, &current_seed, seed_size);
-  memcpy(rng_state+seed_size, &current_offset, offset_size);
-  memcpy(rng_state+seed_size+offset_size, &current_lock_seed, lock_seed_size);
-
-  return state_tensor.getIntrusivePtr();
+  TORCH_CHECK(false, "MKL Generator does not use get_state");
 }
 
 /**
@@ -186,28 +171,7 @@ c10::intrusive_ptr<c10::TensorImpl> MKLGeneratorImpl::get_state() const {
  * must be a strided CPU byte tensor.
  */
  void MKLGeneratorImpl::set_state(const c10::TensorImpl& new_state) {
-  static const size_t seed_size = sizeof(uint64_t);
-  static const size_t offset_size = sizeof(uint64_t);
-  static const size_t lock_seed_size = sizeof(bool);
-  static const size_t total_size = seed_size + offset_size + lock_seed_size;
-
-  detail::check_rng_state(new_state);
-
-  auto new_state_size = new_state.numel();
-  TORCH_CHECK(new_state_size == total_size, "RNG state is wrong size");
-
-  uint64_t input_seed = 0;
-  uint64_t input_offset = 0;
-  bool input_lock_seed = 0;
-
-  auto new_rng_state = new_state.data_dtype_initialized<uint8_t>();
-  memcpy(&input_seed, new_rng_state, seed_size);
-  memcpy(&input_offset, new_rng_state+seed_size, offset_size);
-  memcpy(&input_lock_seed, new_rng_state+seed_size+offset_size, lock_seed_size);
-
-  this->set_current_seed(input_seed);
-  this->skip_ahead(input_offset);
-  this->set_lock_seed(input_lock_seed);
+  TORCH_CHECK(false, "MKL Generator does not use set_state");
 }
 
 } // namespace at
